@@ -121,12 +121,16 @@ defmodule Elasticsearch.Index.Bulk do
   end
 
   defp put_bulk_page(config, index_name, items) when is_list(items) do
-    IO.inspect(config)
     case Elasticsearch.put(config, "/#{index_name}/_doc/_bulk", Enum.join(items)) do
-      {:ok, response} -> {:ok, response}
+      {:ok, response} ->
+        {:ok, response}
+
       {:error, elasticsearch_exception} ->
-        Logger.error("bulk_page_index error: #{inspect(elasticsearch_exception, limit: :infinity)}")
-        Logger.info("bulk_page_index errored items: #{inspect(items, limit: :infinity)}")
+        if Map.get(config, :enable_debug_bulk_put) do
+          Logger.error("put_bulk_page error: #{inspect(elasticsearch_exception, limit: :infinity)}")
+          Logger.info("put_bulk_page errored items: #{inspect(items, limit: :infinity)}")
+        end
+
         {:error, elasticsearch_exception}
     end
   end
