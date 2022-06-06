@@ -121,7 +121,7 @@ defmodule Elasticsearch.Index.Bulk do
   end
 
   defp put_bulk_page(config, index_name, items) when is_list(items) do
-    case Elasticsearch.put(config, "/#{index_name}/_doc/_bulk", Enum.join(items)) do
+    case Elasticsearch.put(config, "/#{index_name}/_bulk", Enum.join(items)) do
       {:ok, response} ->
         {:ok, response}
 
