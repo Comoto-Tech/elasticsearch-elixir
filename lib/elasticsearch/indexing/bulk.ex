@@ -108,31 +108,40 @@ defmodule Elasticsearch.Index.Bulk do
         |> Stream.map(&encode!(config, &1, index_name, action))
         |> Stream.chunk_every(bulk_page_size)
         |> Stream.intersperse(bulk_wait_interval)
-        |> Stream.map(&put_bulk_page(config, index_name, &1))
+        |> Stream.map(&put_bulk_page(config, index_name, &1, 0))
         |> Enum.reduce(errors, &collect_errors(&1, &2, action))
       end)
 
     upload(config, index_name, %{index_config | sources: tail}, errors)
   end
 
-  defp put_bulk_page(_config, _index_name, wait_interval) when is_integer(wait_interval) do
+  defp put_bulk_page(_config, _index_name, wait_interval, _) when is_integer(wait_interval) do
     Logger.debug("Pausing #{wait_interval}ms between bulk pages")
     :timer.sleep(wait_interval)
   end
 
-  defp put_bulk_page(config, index_name, items) when is_list(items) do
+  defp put_bulk_page(config, index_name, items, retry_count) when is_list(items) do
     case Elasticsearch.put(config, "/#{index_name}/_bulk", Enum.join(items)) do
       {:ok, response} ->
         {:ok, response}
 
       {:error, elasticsearch_exception} ->
+        retry_max = Map.get(config, :put_bulk_page_retry_max)
+        retry_wait_interval = Map.get(config, :put_bulk_page_retry_wait_interval, 0)
+        Logger.error("put_bulk_page error: #{inspect(elasticsearch_exception, limit: :infinity)}")
+
         if Map.get(config, :enable_debug_bulk_put) do
-          Logger.error("put_bulk_page error: #{inspect(elasticsearch_exception, limit: :infinity)}")
           Enum.each(items, & Logger.info("put_bulk_page errored item: #{inspect(&1, limit: :infinity)}"))
           Logger.info("---- put_bulk_page end error items ----")
         end
 
-        {:error, elasticsearch_exception}
+        if(retry_max && retry_count < retry_max) do
+          Logger.info("Attempting put_bulk_page retry #{retry_count + 1}")
+          :timer.sleep(retry_wait_interval)
+          put_bulk_page(config, index_name, items, retry_count + 1)
+        else
+          {:error, elasticsearch_exception}
+        end
     end
   end
 
