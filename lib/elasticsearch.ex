@@ -35,7 +35,7 @@ defmodule Elasticsearch do
   @type url :: Path.t()
   @type opts :: Keyword.t()
   @type data :: map | String.t()
-  @type response :: {:ok, map} | {:error, Elasticsearch.Exception.t()} | {:error, HTTPoison.Error.t()}
+  @type response :: {:ok, map} | {:error, Elasticsearch.Exception.t()} | {:error, term}
 
   @doc """
   Creates or updates a document in a given index.
@@ -507,8 +507,14 @@ defmodule Elasticsearch do
     end)
   end
 
+  # HTTPoison-style responses use :status_code, Req-style responses use :status
   defp format({:ok, %{status_code: code, body: body}})
        when code >= 200 and code < 300 do
+    {:ok, body}
+  end
+
+  defp format({:ok, %{status: code, body: body}})
+       when is_integer(code) and code >= 200 and code < 300 do
     {:ok, body}
   end
 

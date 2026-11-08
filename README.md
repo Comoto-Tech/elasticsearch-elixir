@@ -13,15 +13,28 @@ A simple, no-nonsense Elasticsearch library for Elixir. Highlights include:
 
 ## Installation
 
-Add `elasticsearch` to your list of dependencies in `mix.exs`:
+Add `elasticsearch` to your list of dependencies in `mix.exs`, along with
+**one** of the supported HTTP clients. Both are optional dependencies of this
+library, so you must add the one you want yourself:
 
 ```elixir
 def deps do
   [
-    {:elasticsearch, "~> 1.0.0"}
+    {:elasticsearch, "~> 1.0.0"},
+
+    # Either HTTPoison (use api: Elasticsearch.API.HTTP)
+    {:httpoison, "~> 2.0"},
+
+    # ...or Req (use api: Elasticsearch.API.Req)
+    {:req, "~> 0.5"}
   ]
 end
 ```
+
+| HTTP client | `api` module               |
+| ----------- | -------------------------- |
+| HTTPoison   | `Elasticsearch.API.HTTP`   |
+| Req         | `Elasticsearch.API.Req`    |
 
 Then, create an `Elasticsearch.Cluster` in your application:
 
@@ -59,9 +72,10 @@ config :my_app, MyApp.ElasticsearchCluster,
   username: "username",
   password: "password",
 
-  # If you want to mock the responses of the Elasticsearch JSON API
-  # for testing or other purposes, you can inject a different module
-  # here. It must implement the Elasticsearch.API behaviour.
+  # The module used to make HTTP requests. Use Elasticsearch.API.HTTP
+  # (HTTPoison) or Elasticsearch.API.Req (Req), matching the HTTP client
+  # in your deps. To mock the Elasticsearch JSON API for testing or other
+  # purposes, inject any module implementing the Elasticsearch.API behaviour.
   api: Elasticsearch.API.HTTP,
 
   # Customize the library used for JSON encoding/decoding.
@@ -108,16 +122,39 @@ config :my_app, MyApp.ElasticsearchCluster,
   }
 ```
 
-#### Specifying HTTPoison Options
+#### Specifying HTTP Client Options
+
+`default_options` is passed straight through to the configured HTTP client,
+so its contents depend on which `api` module you use.
+
+With `Elasticsearch.API.HTTP` (HTTPoison/Hackney options):
 
 ```elixir
 config :my_app, MyApp.ElasticsearchCluster,
+  api: Elasticsearch.API.HTTP,
   default_options: [
     timeout: 5_000,
     recv_timeout: 5_000,
     hackney: [pool: :pool_name]
   ]
 ```
+
+With `Elasticsearch.API.Req` ([Req options](https://hexdocs.pm/req/Req.html#new/1)):
+
+```elixir
+config :my_app, MyApp.ElasticsearchCluster,
+  api: Elasticsearch.API.Req,
+  default_options: [
+    receive_timeout: 5_000,
+    connect_options: [timeout: 5_000],
+    finch: MyApp.Finch
+  ]
+```
+
+Req raises on unknown options, so don't carry HTTPoison options over when
+switching. `Elasticsearch.API.Req` disables Req's automatic retries
+(`retry: false`) and JSON decoding (`decode_body: false`, so your
+`json_library` is used) by default. Override either via `default_options`.
 
 ## Protocols and Behaviours
 
@@ -182,7 +219,9 @@ config :my_app, MyApp.ElasticsearchCluster,
   api: MyApp.ElasticsearchMock
 ```
 
-Your mock can then stub requests and responses from Elasticsearch.
+Your mock can then stub requests and responses from Elasticsearch. A response
+can be any map or struct with a `:body` and either a `:status_code` key (like
+`HTTPoison.Response`) or a `:status` key (like `Req.Response`).
 
 ```elixir
 defmodule MyApp.ElasticsearchMock do
@@ -204,14 +243,15 @@ end
 
 As AWS does not provide credentials' based http authentication, you can use the `Elasticsearch.API.AWS` module if you want to use AWS Elasticsearch Service with AWS Signature V4 signed HTTP connections.
 
-To use this, just add `sigaws` to your dependencies and add this to your configuration:
+To use this, just add `sigaws` and `httpoison` to your dependencies and add this to your configuration:
 
 ```elixir
-# Add to deps 
+# Add to deps
 def deps do
-  [          
+  [
     # ...
-    {:sigaws, ">= 0.0.0"}
+    {:sigaws, ">= 0.0.0"},
+    {:httpoison, "~> 2.0"}
   ]
 end
 
