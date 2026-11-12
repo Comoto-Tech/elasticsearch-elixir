@@ -10,7 +10,7 @@
 **Implemented enhancements:**
 
 - Add `Elasticsearch.API.Req`, an `Elasticsearch.API` implementation backed by
-  [Req](https://hex.pm/packages/req). Add `{:req, "~> 0.5"}` to your deps and
+  [Req](https://hex.pm/packages/req). Add `{:req, "~> 0.7"}` to your deps and
   set `api: Elasticsearch.API.Req`.
 - `Elasticsearch` functions accept API responses with either a `:status_code`
   (HTTPoison) or `:status` (Req) key.

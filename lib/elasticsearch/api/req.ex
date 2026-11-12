@@ -5,15 +5,18 @@ if Code.ensure_loaded?(Req) do
 
     Requires `:req` in your dependencies:
 
-        {:req, "~> 0.5"}
+        {:req, "~> 0.7"}
 
     ## Options
 
     `:default_options` from the cluster config and per-request `opts` are
     passed to `Req.request/1`, so any Req option works (e.g.
     `receive_timeout: 5_000`, `connect_options: [timeout: 5_000]`, or
-    `finch: MyApp.Finch`). Per-request `opts` take precedence over
-    `:default_options`.
+    `finch: [name: MyApp.Finch]` to use your own Finch pool). Per-request
+    `opts` take precedence over `:default_options`.
+
+    Req does not allow `:connect_options` together with a named Finch pool;
+    configure connection options when starting that pool instead.
 
     Req rejects options it does not recognize, so HTTPoison/Hackney options
     such as `recv_timeout` or `hackney: [...]` must not appear in

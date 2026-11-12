@@ -26,7 +26,7 @@ def deps do
     {:httpoison, "~> 2.0"},
 
     # ...or Req (use api: Elasticsearch.API.Req)
-    {:req, "~> 0.5"}
+    {:req, "~> 0.7"}
   ]
 end
 ```
@@ -146,8 +146,20 @@ config :my_app, MyApp.ElasticsearchCluster,
   api: Elasticsearch.API.Req,
   default_options: [
     receive_timeout: 5_000,
-    connect_options: [timeout: 5_000],
-    finch: MyApp.Finch
+    connect_options: [timeout: 5_000]
+  ]
+```
+
+To use a Finch pool from your own supervision tree, pass its name under
+`:finch`. Req doesn't allow `:connect_options` alongside a named pool, so set
+connection options when you start the pool:
+
+```elixir
+config :my_app, MyApp.ElasticsearchCluster,
+  api: Elasticsearch.API.Req,
+  default_options: [
+    receive_timeout: 5_000,
+    finch: [name: MyApp.Finch]
   ]
 ```
 
