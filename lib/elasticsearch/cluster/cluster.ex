@@ -86,8 +86,9 @@ defmodule Elasticsearch.Cluster do
 
   * `:default_headers` (Optional) - A list of default headers to send with the each request.
 
-  * `:default_options` (Optional) - A list of default HTTPoison/Hackney options to send with
-    each request.
+  * `:default_options` (Optional) - A list of default options passed to the HTTP client with
+    each request. These are HTTPoison/Hackney options for `Elasticsearch.API.HTTP`, or Req
+    options for `Elasticsearch.API.Req`.
 
   ### Configuration Example
 

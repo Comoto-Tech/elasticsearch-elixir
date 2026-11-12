@@ -59,7 +59,8 @@ defmodule Elasticsearch.Mixfile do
   defp deps do
     [
       {:poison, ">= 0.0.0", optional: true},
-      {:httpoison, ">= 0.0.0"},
+      {:httpoison, ">= 0.0.0", optional: true},
+      {:req, "~> 0.7", optional: true},
       {:telemetry, "~> 0.4.3 or ~> 1.0"},
       {:vex, "~> 0.6"},
       {:sigaws_otp_24, "~> 1.0", optional: true},
@@ -91,7 +92,9 @@ defmodule Elasticsearch.Mixfile do
         API: [
           Elasticsearch,
           Elasticsearch.API,
-          Elasticsearch.API.HTTP
+          Elasticsearch.API.HTTP,
+          Elasticsearch.API.Req,
+          Elasticsearch.API.AWS
         ],
         Config: [
           Elasticsearch.Cluster
