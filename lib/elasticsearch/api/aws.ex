@@ -1,7 +1,9 @@
-if Code.ensure_loaded?(Sigaws) do
+if Code.ensure_loaded?(Sigaws) and Code.ensure_loaded?(HTTPoison) do
   defmodule Elasticsearch.API.AWS do
     @moduledoc """
     A HTTP signed implementation of `Elasticsearch.API` to interact with AWS Elasticsearch Service.
+
+    Requires both `:sigaws` and `:httpoison` in your dependencies.
     """
 
     @behaviour Elasticsearch.API

@@ -1,92 +1,35 @@
-defmodule Elasticsearch.API.HTTP do
-  @moduledoc """
-  A "real" HTTP implementation of `Elasticsearch.API`.
-  """
+if Code.ensure_loaded?(HTTPoison) do
+  defmodule Elasticsearch.API.HTTP do
+    @moduledoc """
+    An `Elasticsearch.API` implementation backed by
+    [HTTPoison](https://hex.pm/packages/httpoison).
 
-  @behaviour Elasticsearch.API
+    Requires `:httpoison` in your dependencies:
 
-  @impl true
-  def request(config, method, url, data, opts) do
-    method
-    |> HTTPoison.request(
-      process_url(url, config),
-      process_request_body(data, config),
-      headers(config),
-      opts ++ Map.get(config, :default_options, [])
-    )
-    |> process_response(config)
-  end
+        {:httpoison, "~> 2.0"}
 
-  # Respect absolute URLs if passed
-  defp process_url("http" <> _rest = url, _config) do
-    url
-  end
+    `:default_options` from the cluster config and per-request `opts` are
+    passed to `HTTPoison.request/5`, so any HTTPoison/Hackney option works
+    (e.g. `recv_timeout: 5_000` or `hackney: [pool: :my_pool]`).
 
-  # On relative urls, prepend the configured base URL
-  defp process_url(url, config) do
-    Path.join(config.url, url)
-  end
+    Responses are `HTTPoison.Response` structs and errors are
+    `HTTPoison.Error` structs.
+    """
 
-  # Converts the request body into JSON, unless it has already
-  # been converted. If the data is empty, sends ""
-  defp process_request_body(data, _config) when is_binary(data) do
-    data
-  end
+    @behaviour Elasticsearch.API
 
-  defp process_request_body(data, config) when is_map(data) and data != %{} do
-    json_library(config).encode!(data)
-  end
+    alias Elasticsearch.API.Request
 
-  defp process_request_body(_data, _config) do
-    ""
-  end
-
-  # Converts the response body string from JSON into a map, if it looks like it
-  # is actually JSON
-  defp process_response({:ok, %{body: body} = response}, config) do
-    body =
-      cond do
-        json?(body) -> json_library(config).decode!(body)
-        true -> body
-      end
-
-    {:ok, %{response | body: body}}
-  end
-
-  defp process_response(response, _config) do
-    response
-  end
-
-  defp json?(str) when is_binary(str) do
-    str =~ ~r/^\{/ || str =~ ~r/^\[/
-  end
-
-  # Produces request headers for the request, based on the configuration
-  defp headers(config) do
-    headers = [{"Content-Type", "application/json"}] ++ Map.get(config, :default_headers, [])
-
-    credentials = http_basic_credentials(config)
-
-    if credentials do
-      [{"Authorization", "Basic #{credentials}"} | headers]
-    else
-      headers
+    @impl true
+    def request(config, method, url, data, opts) do
+      method
+      |> HTTPoison.request(
+        Request.url(url, config),
+        Request.body(data, config),
+        Request.headers(config),
+        opts ++ Map.get(config, :default_options, [])
+      )
+      |> Request.decode_response(config)
     end
-  end
-
-  defp http_basic_credentials(%{username: username, password: password}) do
-    Base.encode64("#{username}:#{password}")
-  end
-
-  defp http_basic_credentials(_config) do
-    nil
-  end
-
-  defp json_library(%{json_library: json_library}) do
-    json_library
-  end
-
-  defp json_library(_config) do
-    Poison
   end
 end

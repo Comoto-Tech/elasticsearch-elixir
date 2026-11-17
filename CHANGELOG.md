@@ -1,5 +1,20 @@
 # Changelog
 
+## Unreleased
+
+**Breaking changes:**
+
+- `httpoison` is now an optional dependency. If you use `Elasticsearch.API.HTTP`
+  or `Elasticsearch.API.AWS`, add `{:httpoison, "~> 2.0"}` to your own deps.
+
+**Implemented enhancements:**
+
+- Add `Elasticsearch.API.Req`, an `Elasticsearch.API` implementation backed by
+  [Req](https://hex.pm/packages/req). Add `{:req, "~> 0.7"}` to your deps and
+  set `api: Elasticsearch.API.Req`.
+- `Elasticsearch` functions accept API responses with either a `:status_code`
+  (HTTPoison) or `:status` (Req) key.
+
 ## [v1.1.0](https://github.com/danielberkompas/elasticsearch-elixir/tree/v1.1.0) (2023-09-15)
 
 [Full Changelog](https://github.com/danielberkompas/elasticsearch-elixir/compare/v1.0.1...v1.1.0)
